@@ -3,6 +3,7 @@
 	<apex:includeScript value="{!URLFOR($Resource.jQueryDCS,'/js/jquery-1.5.1.min.js')}" />
 	<apex:includeScript value="{!URLFOR($Resource.jQueryDCS,'/js/jquery-ui-1.8.13.custom.min.js')}" />
 	<apex:includeScript value="{!URLFOR($Resource.jQueryDCS,'/tablesorter/jquery.tablesorter.min.js')}" />
+	<apex:includeScript value="{!URLFOR($Resource.jQueryDCS,'/corners/jquery.corner.js')}" />
 	
 	<apex:stylesheet value="{!URLFOR($Resource.jQueryDCS,'/css/ui-lightness/jquery-ui-1.8.13.custom.css')}" />
 	<apex:stylesheet value="{!URLFOR($Resource.jQueryDCS,'/tablesorter/style.css')}" />
@@ -14,14 +15,26 @@
 			width: 100px; 
 			height: 100px;  
 			float: left; 
-			margin: 2px 2px 2px 2px;
-			padding:2px 2px 2px 2px;
-			background-color: #ffffff;
+			margin: 5px 5px 5px 5px;
+			padding:5px 5px 5px 5px;
+			background-color: #DDEFF4;
 			border-style:solid;
 			border-width:1px;
 			text-align: center;
 		}
-		#droppable { width: 250px; height: 75px; padding: 0.5em; margin: 10px; }
+		
+		#droppable {
+			background: #1797C0;
+			color: #fff;
+			width: 250px; 
+			height: 75px; 
+			padding: 5px; 
+			margin-top: 15px;
+			margin-bottom: 15px;
+			text-align: center;
+			font-size: medium;
+		}
+		
 	</style>
 	
 	<script>
@@ -37,6 +50,9 @@
 		// Wait for document.ready
 		////////////////////////////
 		j$(document).ready(function(){
+		
+			j$( ".draggable" ).corner("15px");
+			j$( "#droppable" ).corner("15px");
 		
 			j$( ".draggable" ).draggable({ 
 				revert: "invalid",
@@ -166,7 +182,7 @@
 				
 				<div style="float: left; width: 50%;">
 					
-					<div id="droppable" class="ui-widget-header">
+					<div id="droppable">
 						<p>Drag and Drop a Product here to add to an Opportunity</p>
 					</div>
 
