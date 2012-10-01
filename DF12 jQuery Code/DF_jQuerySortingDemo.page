@@ -1,0 +1,323 @@
+<apex:page controller="DF_jQuerySortingController" id="pgJQueryDemo" title="jQuery SortingDemo" sidebar="false">
+
+	<apex:includeScript value="{!URLFOR($Resource.jQueryDCS,'/js/jquery-1.5.1.min.js')}" />
+	<apex:includeScript value="{!URLFOR($Resource.jQueryDCS,'/js/jquery-ui-1.8.13.custom.min.js')}" />
+	<apex:includeScript value="{!URLFOR($Resource.jQueryDCS,'/tablesorter/jquery.tablesorter.min.js')}" />
+	
+	<apex:stylesheet value="{!URLFOR($Resource.jQueryDCS,'/css/ui-lightness/jquery-ui-1.8.13.custom.css')}" />
+	<apex:stylesheet value="{!URLFOR($Resource.jQueryDCS,'/tablesorter/style.css')}" />
+
+<apex:outputPanel id="opHelper">
+<script>
+	
+	////////////////////////////
+	// Always declare another instance of jQuery as not to conflict with SF's instance
+	////////////////////////////
+	var j$ = jQuery.noConflict();
+	
+	var strDeleteAccountId;
+	
+	////////////////////////////
+	// Wait for document.ready
+	////////////////////////////
+	j$(document).ready(function(){
+	
+		////////////////////////////////
+    	// Bind TableSorter to a HTML table filled with controller data
+    	////////////////////////////////
+		j$("#tblNativeSortable").tablesorter({
+			widgets: ['zebra'],
+			headers: {
+				// Specify any columns that you don't want to sort by
+				0: { sorter: false },
+			}
+		});
+    
+    	// Use document.getElementById to find VF elements
+    	var elResource = document.getElementById('{!$Component.pgJQueryDemo:frmMain:pbMain:pbsStandardList:pbtNative}');
+    	
+    	////////////////////////////////
+    	// Bind TableSorter to the native SF apex:pageBlockTable
+    	////////////////////////////////
+	    j$(elResource).tablesorter({
+	    	widgets: ['zebra'],
+	    	headers: {
+	    		// Specify any columns that you don't want to sort by
+				// 0: { sorter: false },
+			}
+    	});
+    	
+    	
+    	////////////////////////////
+		// Interstitial Modal Dialog
+		////////////////////////////
+    	j$( "#dialog-modal" ).dialog({
+				autoOpen: false,
+				height: 200,
+				width:  400,
+				modal: true,
+				resizable: false,
+				draggable: false
+		});
+		
+		////////////////////////////
+		// "Create an Account" Modal Dialog
+		////////////////////////////
+		j$( "#dialog-form" ).dialog({
+			autoOpen: false,
+			height: 325,
+			width: 350,
+			modal: true,
+			buttons: {
+				"Create an account": function() {
+				
+					// Submit through apex:actionFunction
+					afCreateAccount(j$("#ifName").val(), j$("#ifWeb").val(), j$("#ifPhone").val(), j$("#ifRedirect:checked").val());
+					
+					// Clear out Values
+					j$("#ifName").val('');
+					j$("#ifWeb").val('');
+					j$("#ifPhone").val('');
+					
+					j$( this ).dialog( "close" );
+				},
+				Cancel: function() {
+					j$( this ).dialog( "close" );
+				}
+			},
+			close: function() {
+				allFields.val( "" ).removeClass( "ui-state-error" );
+			}
+		});
+		
+		////////////////////////////
+		// "Quick Add Account" button
+		////////////////////////////
+		j$( "#create-user" )
+			.button()
+			.click(function() {
+				j$( "#dialog-form" ).dialog( "open" );
+		});
+		
+		////////////////////////////
+		// "Delete Confirmation" Modal Dialog
+		////////////////////////////
+		j$( "#dialog-confirm" ).dialog({
+			autoOpen: false,
+			resizable: false,
+			height:200,
+			modal: true,
+			buttons: {
+				"Delete Account": function() {
+					
+					// Call ActionFunction to Delete Account
+					afDeleteAccount(strDeleteAccountId);
+					
+					j$( this ).dialog( "close" );
+				},
+				Cancel: function() {
+					j$( this ).dialog( "close" );
+				}
+			}
+		});
+		
+		////////////////////////////
+		// Record Count / Display Slider
+		////////////////////////////
+		j$( "#slider" ).slider({
+			min: 1,
+			max: 10,
+			step: 1,
+			value: {!intRecordCount},
+			slide: function( event, ui ) {
+				j$( "#reccount" ).val( ui.value + ' records');
+			},
+			stop: function(event, ui) {
+				afRefreshSlider(j$( "#slider" ).slider( "value" ));
+			}
+			
+		});
+		
+		j$( "#reccount" ).val(j$( "#slider" ).slider( "value" ) + ' records' );
+    	
+	});
+	
+	
+	////////////////////////////
+	// Standard JS Functions
+	////////////////////////////
+	function statusShow() {
+		j$( "#dialog-modal" ).dialog( "open" );
+	}
+	
+	function statusHide() {
+		j$( "#dialog-modal" ).dialog( "close" );
+	}
+	
+	function deleteAcct(strAccountId) {
+		
+		strDeleteAccountId = strAccountId;
+		
+		j$( "#dialog-confirm" ).dialog( "open" );
+	
+	}
+		
+</script>
+
+	<!-- ---------------------------- -->
+	<!-- jQuery Helper Objects / HTML -->
+	<!-- ---------------------------- -->	
+
+	<div id="dialog-confirm" title="Delete this Account?">
+		<p>
+			<span class="ui-icon ui-icon-alert" style="float:left; margin:0 7px 20px 0;"></span>
+			This Account will be deleted if you continue!&nbsp;&nbsp;Are you sure?
+		</p>
+	</div>
+	
+	<div id="dialog-modal" title="Refreshing Demo Page">
+		<p align="center">
+			<img src="/resource/1343881993000/Dreamforce2012" border="0" />
+		</p>
+	</div>
+	
+	<div id="dialog-form" title="Create New Account">
+		<p class="validateTips">All form fields are required.</p>
+	
+		<apex:form id="frmCreateAccount">
+			<fieldset>
+				<label for="ifName">Account Name:&nbsp;&nbsp;</label>
+				<input type="text" id="ifName" />
+				<br />
+	
+				<label for="ifWeb">Account Website:&nbsp;&nbsp;</label>
+				<input type="text" id="ifWeb" />
+				<br />
+	
+				<label for="ifPhone">Account Phone:&nbsp;&nbsp;</label>
+				<input type="text" id="ifPhone" />
+				<br />
+				<br />
+				
+				<input type="radio" id="ifRedirect" name="ifRedirect" value="on" />
+				<label for="ifRedirect">Send me to Account Page for further info</label><br />
+				
+				<input type="radio" id="ifRedirect" name="ifRedirect" value="off" />
+				<label for="ifRedirect">Quick Add Only; Return to Screen</label>
+	
+			</fieldset>
+		</apex:form>
+
+	</div>
+
+</apex:outputPanel>
+
+<!-- -------------------------- -->
+<!-- Main Visualforce HTML Body -->
+<!-- -------------------------- -->	
+
+<apex:form id="frmMain">
+
+	<apex:actionStatus id="asShowInterstitial" onstart="statusShow();" onstop="statusHide();" />
+	
+	<apex:actionFunction id="afCreateAccount" name="afCreateAccount" action="{!createAccount}" rerender="pbMain, opHelper">
+		<apex:param name="strAcctName" assignTo="{!strAcctName}" value="" />
+		<apex:param name="strAcctWeb" assignTo="{!strAcctWeb}" value="" />
+		<apex:param name="strAcctPhone" assignTo="{!strAcctPhone}" value="" />
+		<apex:param name="strRedirectToAccount" assignTo="{!strRedirectToAccount}" value="" />
+	</apex:actionFunction>
+	
+	<apex:actionFunction id="afDeleteAccount" name="afDeleteAccount" action="{!deleteAccount}" rerender="pbMain, opHelper">
+		<apex:param name="strAccountId" assignTo="{!strAccountId}" value="" />
+	</apex:actionFunction>
+	
+	<apex:actionFunction id="afRefreshSlider" name="afRefreshSlider" action="{!doNothing}" rerender="pbMain, opHelper" status="asShowInterstitial">
+		<apex:param name="intRecordCount" assignTo="{!intRecordCount}" value="" />
+	</apex:actionFunction>
+
+	<apex:pageBlock id="pbMain" title="Dreamforce 2012 jQuery Demo Page">
+	
+		<apex:pageBlockButtons id="pbbMain" location="top">
+			
+			<apex:commandButton id="cmdRefreshNative" value="Refresh / Rerender Native" action="{!doNothing}" rerender="pbMain, opHelper" />
+			<apex:commandButton id="cmdRefreshjQuery" value="Refresh / Rerender jQuery" action="{!doNothing}" rerender="pbMain, opHelper" status="asShowInterstitial" />
+			
+		</apex:pageBlockButtons>
+	
+		<apex:pageBlockSection id="pbsStandardList" columns="1" title="Standard Visualforce Table">
+		
+			<apex:outputPanel >
+				<label for="reccount">Accounts to show:</label>
+				<input type="text" id="reccount" style="border:0; color:#f6931f; font-weight:bold;" readonly="true" />
+				<div id="slider" style="width: 200px;"></div>
+			</apex:outputPanel>
+		
+			<apex:pageBlockTable id="pbtNative" value="{!lstAccounts}" var="a">
+	
+	            <apex:column headerValue="Delete?">
+	            	<a href="#" onClick="deleteAcct('{!a.Id}');">Delete</a>
+	            </apex:column>
+	            <apex:column value="{!a.Id}"/>
+	            <apex:column value="{!a.Name}"/>
+	            <apex:column value="{!a.Website}"/>
+	            <apex:column value="{!a.Phone}"/>
+	
+	        </apex:pageBlockTable> 
+		
+		</apex:pageBlockSection>
+		
+		<apex:pageBlockSection id="pbsJQueryList" columns="1" title="Native HTML Table">
+		
+			<apex:outputPanel >
+		
+			<table id="tblNativeSortable" class="list tablesorter" border="0" cellpadding="0">
+				<thead>
+					<tr>
+						<th>Delete?</th>
+						<th>Account Id</th>
+						<th>Account Name</th>
+						<th>Website</th>
+						<th>Phone</th>
+					</tr>
+				</thead>
+				<tbody>
+					<apex:repeat value="{!lstAccounts}" var="a">
+						<tr>
+							<td>
+								<a href="#" onClick="deleteAcct('{!a.Id}');">Delete</a>
+							</td>
+							<td>{!a.Id}</td>
+							<td>{!a.Name}</td>
+							<td>{!a.Website}</td>
+							<td>{!a.Phone}</td>
+						</tr>	
+					</apex:repeat>
+				</tbody>
+			</table>
+			
+			</apex:outputPanel>
+		
+		</apex:pageBlockSection>
+		
+		<apex:pageBlockSection id="pbsCreateAccount" title="jQuery Quick Add Account" columns="1">
+		
+			<apex:outputPanel >
+			
+				<button type="button" id="create-user">Quick Add Account</button>
+			
+			</apex:outputPanel>
+		
+		</apex:pageBlockSection>
+	
+	</apex:pageBlock>
+
+</apex:form>
+
+<script>
+
+	twistSection(document.getElementById('{!$Component.pgJQueryDemo:frmMain:pbMain:pbsJQueryList}').getElementsByTagName('img')[0]);
+	twistSection(document.getElementById('{!$Component.pgJQueryDemo:frmMain:pbMain:pbsCreateAccount}').getElementsByTagName('img')[0]);
+
+</script>
+
+</apex:page>

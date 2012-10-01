@@ -1,0 +1,224 @@
+<apex:page controller="DF_jQueryDDDemoController" title="jQuery Drag and Drop Demo">
+
+	<apex:includeScript value="{!URLFOR($Resource.jQueryDCS,'/js/jquery-1.5.1.min.js')}" />
+	<apex:includeScript value="{!URLFOR($Resource.jQueryDCS,'/js/jquery-ui-1.8.13.custom.min.js')}" />
+	<apex:includeScript value="{!URLFOR($Resource.jQueryDCS,'/tablesorter/jquery.tablesorter.min.js')}" />
+	<apex:includeScript value="{!URLFOR($Resource.jQueryDCS,'/corners/jquery.corner.js')}" />
+	
+	<apex:stylesheet value="{!URLFOR($Resource.jQueryDCS,'/css/ui-lightness/jquery-ui-1.8.13.custom.css')}" />
+	<apex:stylesheet value="{!URLFOR($Resource.jQueryDCS,'/tablesorter/style.css')}" />
+	
+	<apex:outputPanel id="opHelper">
+	
+	<style>
+		.draggable { 
+			width: 100px; 
+			height: 100px;  
+			float: left; 
+			margin: 5px 5px 5px 5px;
+			padding:5px 5px 5px 5px;
+			background-color: #DDEFF4;
+			border-style:solid;
+			border-width:1px;
+			text-align: center;
+		}
+		
+		#droppable {
+			background: #1797C0;
+			color: #fff;
+			width: 250px; 
+			height: 75px; 
+			padding: 5px; 
+			margin-top: 15px;
+			margin-bottom: 15px;
+			text-align: center;
+			font-size: medium;
+		}
+		
+	</style>
+	
+	<script>
+		
+		////////////////////////////
+		// Always declare another instance of jQuery as not to conflict with SF's instance
+		////////////////////////////
+		var j$ = jQuery.noConflict();
+		
+		var strDeleteAccountId;
+		
+		////////////////////////////
+		// Wait for document.ready
+		////////////////////////////
+		j$(document).ready(function(){
+		
+			j$( ".draggable" ).corner("15px");
+			j$( "#droppable" ).corner("15px");
+		
+			j$( ".draggable" ).draggable({ 
+				revert: "invalid",
+				opacity: 0.70,
+				zIndex: 10000,
+				cursor: "move"
+			});
+			
+			j$( "#droppable" ).droppable({
+				drop: function( event, ui ) {
+					
+					// Send through to Salesforce
+					afAddProduct(ui.draggable.data('pbid'), ui.draggable.data('unitprice'));
+					
+				}
+			});
+			
+			////////////////////////////
+			// Interstitial Modal Dialog
+			////////////////////////////
+	    	j$( "#dialog-modal" ).dialog({
+					autoOpen: false,
+					height: 200,
+					width:  400,
+					modal: true,
+					resizable: false,
+					draggable: false
+			});
+		
+		});
+		
+		////////////////////////////
+		// Standard JS Functions
+		////////////////////////////
+		function statusShow() {
+			j$( "#dialog-modal" ).dialog( "open" );
+		}
+		
+		function statusHide() {
+			j$( "#dialog-modal" ).dialog( "close" );
+		}
+		
+	</script>
+	</apex:outputPanel>
+
+
+<!-- -------------------------- -->
+<!-- Main Visualforce HTML Body -->
+<!-- -------------------------- -->	
+
+	<div id="dialog-modal" title="Refreshing Demo Page">
+		<p align="center">
+			<img src="/resource/1343881993000/Dreamforce2012" border="0" />
+		</p>
+	</div>
+
+<apex:form id="frmMain">
+
+	<apex:actionStatus id="asShowInterstitial" onstart="statusShow();" onstop="statusHide();" />
+
+	<apex:actionFunction name="afAddProduct" action="{!addProduct}" rerender="pbtOpps, opHelper, pbsOppProducts" status="asShowInterstitial">
+		<apex:param name="idActionPBE" assignTo="{!idActionPBE}" value="" />
+		<apex:param name="decActionPBEPrice" assignTo="{!decActionPBEPrice}" value="" />
+	</apex:actionFunction>
+
+	<apex:pageBlock id="pbMain" title="Dreamforce 2012 jQuery Demo Page">
+	
+		<apex:pageBlockButtons id="pbbMain" location="top">
+			
+			<apex:commandButton id="cmdRefreshNative" value="Refresh / Rerender Native" action="{!doNothing}" rerender="pbMain, opHelper" />
+			<apex:commandButton id="cmdRefreshjQuery" value="Refresh / Rerender jQuery" action="{!doNothing}" rerender="pbMain, opHelper" status="asShowInterstitial" />
+			
+		</apex:pageBlockButtons>
+	
+		<apex:pageBlockSection id="pbsOppInfo" columns="1" title="Opportunity Information">
+		
+			<apex:pageBlockTable id="pbtOpps" value="{!lstOpps}" var="o">
+			
+				<apex:column headerValue="Choose">
+					<apex:commandButton value="Choose" action="{!chooseOpportunity}" rerender="opHelper, pbsOppProducts" status="asShowInterstitial">
+						<apex:param name="idOpportunity" value="{!o.Id}" assignTo="{!idOpportunity}" />
+					</apex:commandButton>
+					
+				</apex:column>
+				
+				<apex:column headerValue="Opportunity Name">
+					<apex:outputLink value="/{!o.Id}">{!o.Name}</apex:outputLink>
+				</apex:column>
+				<apex:column value="{!o.StageName}" />
+				<apex:column value="{!o.Amount}" />
+				<apex:column value="{!o.TotalOpportunityQuantity}" />
+				<apex:column headerValue="Modified On">
+					<apex:outputField value="{!o.LastModifiedDate}" />
+				</apex:column>
+			
+			</apex:pageBlockTable> 
+		
+		</apex:pageBlockSection>
+		
+		<br />
+		
+		<apex:pageBlockSection id="pbsOppProducts" columns="1" title="Opportunity Products">
+		
+			<apex:outputPanel id="opProducts" rendered="{!IF(idOpportunity != null, true, false)}">
+			
+				<div style="float: left; width: 45%;">
+				
+					<div>
+						Choose a Product Line:&nbsp;&nbsp;
+						<apex:selectList value="{!strProductFamily}" multiselect="false" size="1">
+							<apex:selectOptions value="{!lstProductFamily}" />
+							<apex:actionSupport event="onchange" action="{!doNothing}" rerender="opProducts, opHelper" status="asShowInterstitial" />
+						</apex:selectList>
+						
+					</div>
+				
+					<apex:repeat value="{!lstProducts}" var="p">
+					
+						<div class="draggable" data-pbid="{!p.pbe.Id}" data-unitprice="{!p.pbe.UnitPrice}">
+							{!p.pdt.Family} - {!p.pdt.Name}<br />
+							<apex:outputField value="{!p.pbe.UnitPrice}" />
+						</div>
+					
+					</apex:repeat>
+				
+				</div>
+				
+				<div style="float: left; width: 50%;">
+					
+					<div id="droppable">
+						<p>Drag and Drop a Product here to add to an Opportunity</p>
+					</div>
+
+					<div>
+						<apex:commandButton value="Save All Products" action="{!saveAllProducts}" rerender="opHelper, pbsOppProducts, pbtOpps" status="asShowInterstitial" />
+					</div>
+					
+					<apex:pageBlockTable id="pbtOLIs" value="{!lstOLIs}" var="l">
+					
+						<apex:column headerValue="Action">
+							<apex:commandButton value="Save" action="{!saveProducts}" rerender="opHelper, pbsOppProducts, pbtOpps" status="asShowInterstitial">
+								<apex:param name="idActionOLI" value="{!l.Id}" assignTo="{!idActionOLI}" />
+							</apex:commandButton>
+							<apex:commandButton value="Delete" action="{!deleteProduct}" rerender="opHelper, pbsOppProducts, pbtOpps" status="asShowInterstitial">
+								<apex:param name="idActionOLI" value="{!l.Id}" assignTo="{!idActionOLI}" />
+							</apex:commandButton>
+						</apex:column>
+					
+						<apex:column value="{!l.PricebookEntry.Product2.Name}" />
+						<apex:column headerValue="Quantity">
+							<apex:inputText value="{!l.Quantity}" />
+						</apex:column>
+						<apex:column headerValue="Total Price">
+							<apex:outputField value="{!l.TotalPrice}" />
+						</apex:column>
+					
+					</apex:pageBlockTable>
+				
+				</div>
+				
+			</apex:outputPanel>
+		
+		</apex:pageBlockSection>
+		
+	</apex:pageBlock>
+	
+</apex:form>
+
+</apex:page>
