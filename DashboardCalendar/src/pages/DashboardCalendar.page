@@ -1,0 +1,163 @@
+<apex:page controller="DashboardCalendarController" showHeader="true" sidebar="true" readOnly="true">
+<!-- 
+/**
+*   {Purpose}	-  	View for Dashboard Calendar
+*
+*   {Contact}	- 	techman97@gmail.com / @andyboettcher         
+*	
+*	{Open Source}	This code has been released to benefit the Salesforce.com
+*					Developer Community.  If you use this source code, please
+*					reference my name in the source as contributor and please
+*					"pay it forward" by either forking and contributing to this
+*					or contributing your own creation to the community.
+*					Thank you!
+*/
+
+/**
+*   CHANGE  HISTORY
+*   =============================================================================
+*   Date    	Name             		Description
+*   20131112  	Andy Boettcher 			Created
+*	20140116	Andy Boettcher			Added support to Custom Setting (SOQL Support)
+*   20140809  	Andy Boettcher 			Generalized for Open Source Release
+*   =============================================================================
+*/
+ -->
+	<apex:stylesheet value="{!URLFOR($Resource.jQueryCalendar,'/fullcalendar/fullcalendar.css')}" />
+	<apex:stylesheet value="{!URLFOR($Resource.jQueryCalendar,'/qtip2/jquery.qtip.min.css')}" />
+	<apex:includeScript value="{!URLFOR($Resource.jQueryCalendar,'/js/jquery-1.8.0.min.js')}" />
+    <apex:includeScript value="{!URLFOR($Resource.jQueryCalendar,'/js/jquery-ui-1.8.23.custom.min.js')}" />
+    <apex:includeScript value="{!URLFOR($Resource.jQueryCalendar,'/moment/moment.js')}" />
+    <apex:includeScript value="{!URLFOR($Resource.jQueryCalendar,'fullcalendar/fullcalendar.min.js')}" />
+    <apex:includeScript value="{!URLFOR($Resource.jQueryCalendar,'/qtip2/jquery.qtip.min.js')}" />
+
+    <style>
+    	.divLegend {
+    		width: 150px;
+    		float: left;
+    		padding: 2px;
+    		margin: 2px;
+    	}
+    </style>
+
+	<script> 
+
+		j$ = jQuery.noConflict();
+
+        j$(document).ready(function() {
+
+			var arrLegend = [];
+
+			j$('#calendar').fullCalendar({
+				header: {
+					left: 'prev,next today',
+					center: 'title',
+					right: 'month,agendaWeek,agendaDay'
+				},
+				weekMode: 'variable',
+				editable: false,
+				eventSources: [
+					{
+						// SOURCE N:  DYNAMIC OBJECT
+						events: function(start, end, callback) {
+							Visualforce.remoting.Manager.invokeAction('DashboardCalendarController.lstCalendarEvents',
+							    function(result, event){
+							        if (event.status) {
+
+							        	var arrLegend = [];
+							        	var arrEvents = [];
+
+							        	// Cycle through all results, format for FullCalendar Event Array
+										for (var i = 0; i < result.length; i++) {
+
+											// Push object into Legend array
+											jsonLegendData = {};
+											jsonLegendData['name'] = result[i].strName;
+											jsonLegendData['bgcolor'] = result[i].strBGCOLOR;
+											jsonLegendData['color'] = result[i].strCOLOR;
+											jsonLegendData['id'] = result[i].strSourceId;
+											arrLegend.push(jsonLegendData);
+
+											for(var e = 0; e < result[i].lstEvents.length; e++) {
+
+												// Parse core dates and calendar items
+										        var r = result[i].lstEvents[e];
+										        r.start = moment.utc(r.dtmStart).toDate();
+										        r.end = moment.utc(r.dtmEnd).toDate();
+										        if(r.dtmStart == r.dtmEnd) { 
+										        	r.allDay = true; 
+										        	r.start = moment(r.dtmStart).add('minutes', moment(r.dtmStart).zone()).toDate(); // Handle SFDC Offset of 00:00:00
+										        } else { 
+										        	r.allDay = false; 
+										       	}
+										        r.id = r.strId;
+										        r.title = r.strTitle;
+										        r.editable = false;
+										        r.color = result[i].strBGCOLOR;
+										        r.textColor = result[i].strCOLOR;
+
+										        // Parse remaining fields for qtip hover
+										        var rData = '';
+										        for(var d = 0; d < result[i].lstEvents[e].lstData.length; d++) {
+										        	var detail = result[i].lstEvents[e].lstData[d];
+										        	var displayValue;
+										        	if(moment(detail.strData).isValid() && detail.strData != '' && detail.strData != 'undefined' && detail.strData != null) {
+										        		displayValue = moment(detail.strData).add('minutes', moment(detail.strData).zone()).toDate();
+										        		displayValue = moment(displayValue).format('MM/DD/YYYY');
+										        	} else {
+										        		displayValue = detail.strData;
+										        	}
+
+										        	rData+= '<strong>' + detail.strField + '</strong>:&nbsp;' + displayValue + '<br />';
+										        }
+
+										        // Scan for line breaks
+										        rData = rData.replace("&lt;br&gt;", "<br />");
+										        r.detailData = rData;
+
+										        // Push back to Event Calendar Source
+										        arrEvents.push(r);
+										    }
+
+									    }
+
+									    // Add Event Sources to the Legend
+									    j$('#fsLegend').empty();
+									    j$('#fsLegend').append('<legend>Calendar Legend</legend>');
+										for(var i = 0; i < arrLegend.length; i++) {
+											objLegend = arrLegend[i];
+											j$('#fsLegend').append('<div class=\"divLegend\" style=\"background-color: ' + objLegend.bgcolor + ';color: ' + objLegend.color + '\">' + objLegend.name + '<div>');
+										}
+
+								    	// Send JSRemoting result to FullCalendar
+								    	callback(arrEvents);
+								    }
+								}, 
+							    {escape: true}
+							);
+						}
+					}
+				],
+				eventRender: function(event, element) {
+					element.qtip({
+						// content: event.title,
+						content: event.detailData,
+						position: { target: 'mouse', adjust: { mouse: false } }
+					});
+				},
+				eventClick: function(calEvent, jsEvent, view) {
+			        window.open("/" + calEvent.id, "_blank");
+			    }
+			});
+
+		});
+
+    </script>
+	
+    <apex:sectionHeader title="Company Dashboard" subtitle="Calendar" />
+    <div id='calLegend' style='margin:1em 0;font-size:13px;float:left;width:100%;'>
+    	<fieldset id="fsLegend" style="padding:2px;"><legend>Calendar Legend</legend></fieldset>
+    </div>
+    <div id='calendar' style='margin:1em 0;font-size:13px;float:left;width:100%;'></div>
+
+</apex:page>
