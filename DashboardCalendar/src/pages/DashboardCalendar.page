@@ -101,7 +101,7 @@
 										        for(var d = 0; d < result[i].lstEvents[e].lstData.length; d++) {
 										        	var detail = result[i].lstEvents[e].lstData[d];
 										        	var displayValue;
-										        	if(moment(detail.strData).isValid() && detail.strData != '' && detail.strData != 'undefined' && detail.strData != null) {
+										        	if(!isNaN(detail.strData) && moment(detail.strData).isValid() && detail.strData != '' && detail.strData != 'undefined' && detail.strData != null) {
 										        		displayValue = moment(detail.strData).add('minutes', moment(detail.strData).zone()).toDate();
 										        		displayValue = moment(displayValue).format('MM/DD/YYYY');
 										        	} else {
