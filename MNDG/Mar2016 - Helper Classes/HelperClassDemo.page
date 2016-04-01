@@ -1,0 +1,88 @@
+<apex:page showHeader="true" sidebar="true" controller="HelperClassDemoController" tabStyle="Account">
+	<apex:sectionHeader title="Account" subtitle="Whatchamacallit" />
+
+	<apex:form id="frmMain">
+
+	<apex:pageBlock id="pbMain" title="Account Search">
+		<apex:pageBlockButtons location="top">
+			<apex:commandButton id="cmdSearch" action="{!doSearch}" value="Search" rerender="pbMain" />
+			<apex:commandButton id="cmdShow" action="{!doAllTheThings}" value="Process Selected" rerender="pbMain" />
+		</apex:pageBlockButtons>
+
+		<apex:pageBlockSection title="Search Criteria">
+			<apex:pageBlockSectionItem>
+				<apex:outputLabel for="strSearchName" value="Account Name" />
+				<apex:inputText id="strSearchName" value="{!strSearchName}" />
+			</apex:pageBlockSectionItem>
+			<apex:pageBlockSectionItem>
+				<apex:outputLabel for="strSearchIndustry" value="Industry" />
+				<apex:inputText id="strSearchIndustry" value="{!strSearchIndustry}" />
+			</apex:pageBlockSectionItem>
+			<apex:pageBlockSectionItem>
+				<apex:outputLabel for="strSearchAccountNumber" value="Account Number" />
+				<apex:inputText id="strSearchAccountNumber" value="{!strSearchAccountNumber}" />
+			</apex:pageBlockSectionItem>
+		</apex:pageBlockSection>
+
+<!-- 		<apex:pageBlockSection title="Search Criteria (Helper)">
+			<apex:pageBlockSectionItem>
+				<apex:outputLabel for="strSearchName" value="Account Name" />
+				<apex:inputText id="strSearchName" value="{!clsSearch.strSearchName}" />
+			</apex:pageBlockSectionItem>
+			<apex:pageBlockSectionItem>
+				<apex:outputLabel for="strSearchIndustry" value="Industry" />
+				<apex:inputText id="strSearchIndustry" value="{!clsSearch.strSearchIndustry}" />
+			</apex:pageBlockSectionItem>
+			<apex:pageBlockSectionItem>
+				<apex:outputLabel for="strSearchAccountNumber" value="Account Number" />
+				<apex:inputText id="strSearchAccountNumber" value="{!clsSearch.strSearchAccountNumber}" />
+			</apex:pageBlockSectionItem>
+		</apex:pageBlockSection> -->
+
+		<apex:pageBlockSection title="Search Results" columns="1">
+			<apex:pageBlockTable id="pbtResults" value="{!lstAccounts}" var="search">
+				<apex:column value="{!search.Id}" />
+				<apex:column value="{!search.Name}" />
+				<apex:column value="{!search.Industry}" />
+				<apex:column value="{!search.AccountNumber}" />
+				<apex:column value="{!search.BillingState}" />
+			</apex:pageBlockTable>
+		</apex:pageBlockSection>
+
+<!-- 		<apex:pageBlockSection title="Search Results (Helper)" columns="1">
+			<apex:pageBlockTable id="pbtResults" value="{!lstAccountHelpers}" var="search">
+				<apex:column>
+					<apex:inputCheckBox value="{!search.bolSelected}" />
+				</apex:column>
+				<apex:column value="{!search.soAcct.Id}" />
+				<apex:column value="{!search.soAcct.Name}" />
+				<apex:column value="{!search.soAcct.Industry}" />
+				<apex:column value="{!search.soAcct.AccountNumber}" />
+				<apex:column value="{!search.soAcct.BillingState}" />
+			</apex:pageBlockTable>
+		</apex:pageBlockSection> -->
+
+		<apex:pageBlockSection title="Selected Accounts" columns="1">
+			<apex:pageBlockTable id="pbtSelected" value="{!mapSelectedAccounts}" var="selected">
+				<apex:column value="{!mapSelectedAccounts[selected].Id}" />
+				<apex:column value="{!mapSelectedAccounts[selected].Name}" />
+				<apex:column value="{!mapSelectedAccounts[selected].Industry}" />
+				<apex:column value="{!mapSelectedAccounts[selected].AccountNumber}" />
+				<apex:column value="{!mapSelectedAccounts[selected].BillingState}" />
+			</apex:pageBlockTable>
+		</apex:pageBlockSection>
+
+		<apex:pageBlockSection title="Selected Account Opportunities" columns="1">
+			<apex:pageBlockTable id="pbtOpportunities" value="{!lstOpportunities}" var="opp">
+				<apex:column value="{!opp.Id}" />
+				<apex:column value="{!opp.Name}" />
+				<apex:column value="{!opp.Amount}" />
+				<apex:column value="{!opp.StageName}" />
+				<apex:column value="{!opp.CloseDate}" />
+			</apex:pageBlockTable>
+		</apex:pageBlockSection>
+	</apex:pageBlock>
+
+	</apex:form>
+
+</apex:page>
