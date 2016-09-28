@@ -1,0 +1,74 @@
+/services/apexrest/webprocessor
+
+{
+  "actionName": "createAccount",
+  "objAccount": {
+    "Name": "Test Account 1",
+    "AccountNumber": "123456789",
+    "Industry": "Super Spy Management",
+    "ShippingStreet": "123 My Street",
+    "ShippingCity": "MyCity",
+    "ShippingState": "CA",
+    "ShippingPostalCode": "90210",
+    "ShippingCountry": "USA"
+  }
+}
+
+{
+  "actionName": "updateAccount",
+  "objAccount": {
+    "Id": "",
+    "Name": "Test Account 1",
+    "AccountNumber": "123456789",
+    "Industry": "Extra Supreme Super Spy Management",
+    "ShippingStreet": "123 My Street",
+    "ShippingCity": "MyCity",
+    "ShippingState": "CA",
+    "ShippingPostalCode": "90210",
+    "ShippingCountry": "USA"
+  }
+}
+
+
+	///////////////////////////////
+	// FLOW CONNECTION!
+	///////////////////////////////
+	@HttpPost
+	global static void actionRouter() {
+
+		RestRequest req = RestContext.request;
+		resp = RestContext.response;
+		resp.statusCode = 200;
+		resp.addHeader('Content-Type', 'application/json');
+
+		// Process Request Body
+		try {
+			reqBody = (WS_WebProcessor.wsRequest)JSON.deserializeStrict(RestContext.request.requestBody.toString(), 
+				WS_WebProcessor.wsRequest.class);
+
+			// Route Actions
+			System.Debug('actionRouter - REQUESTED ACTION = ' + reqBody.actionName);
+
+			// Pass to FLOW
+			Map<String, Object> mapParameters = new Map<String, Object>();
+			mapParameters.put('soAccount', reqBody.objAccount);
+			mapParameters.put('strAction', reqBody.actionName);
+
+			Flow.Interview.REST_Service_Business_Logic flowREST = new Flow.Interview.REST_Service_Business_Logic(mapParameters);
+			flowREST.start();
+
+			bolProcessedAction = (Boolean) flowREST.getVariableValue('resultBolSuccess');
+			decResultCode = (Decimal) flowREST.getVariableValue('resultIntCode');
+			strError = (String) flowREST.getVariableValue('resultStrError');
+			strMessageDetail = (String) flowREST.getVariableValue('resultStrExtendedInfo');
+
+			// Process a positive result
+			processResponse(bolProcessedAction, Integer.valueOf(decResultCode), reqBody.actionName, strMessageDetail);
+
+		} catch(JSONException exJSON) {
+			processResponse(false, 1000, null, exJSON.getMessage());
+		} catch(Exception ex) {
+			processResponse(false, 9999, null, ex.getMessage());
+		}
+
+	}
